@@ -30,7 +30,8 @@ let loan = {
     term: 60, //calculate using calculateLoanTerm();
     interestRate: 0.045, //calculated with TODO:
     installment: 0, //calculate by using calculateInstallment();
-    annualCostsPercentageRate: 0
+    annualCostsPercentageRate: 0,
+    totalAmountPaid: 0,
 }
 
 // UNIT TESTS
@@ -133,8 +134,8 @@ function calculateInstallment(loan) {
     loan.calcType = "installment";
     //TODO: remove from code after testing
     //console.log(calculateInstallment.caller); (doesn't work in strict mode since ES5 :(
-    count+=1;
-    if (count > 1){
+    count += 1;
+    if (count > 1) {
         loan.calcType = "ГПР"
     }
     //REMOVE UNTIL HERE
@@ -224,6 +225,10 @@ function calculateAnnualCostsPercentageRate(loan, taxes) {
     let irr = IRR(cashflows, 0.1)     //0.1 is guess value, usually by default is 0.1
     loan.annualCostsPercentageRate = (1 + irr) ** 12 - 1;
 
+    cashflows.shift();
+    let totalAmountToPay = cashflows.reduce((x,y)=>x+y);
+    console.log(totalAmountToPay);
+    loan.totalAmountPaid = totalAmountToPay;
 
     return customRound(roundType.NONE, loan.annualCostsPercentageRate)
 }
