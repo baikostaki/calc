@@ -190,11 +190,12 @@ function calculateAnnualCostsPercentageRate(loan, taxes) {
                             taxAmount += currentTax.amount;
                         }
 
-                        if (currentTax.period > 1 && i > 0 && currentTax.period % i == 0) {
+                        if (currentTax.period > 1 && i > 0 && i % currentTax.period === 0) {
                             if (i == 1) {
                                 continue;
                             }
                             taxAmount += currentTax.amount
+                            console.log(`fixed periodical tax added: ${taxAmount} , installment # ${i}`);
                         }
                     }
 
@@ -204,6 +205,7 @@ function calculateAnnualCostsPercentageRate(loan, taxes) {
                             let anotherType = "taxOnOutstandingAmount"
                             if (anotherType == "taxOnOutstandingAmount") {
                                 taxAmount += currentTax.amount * currentBalance
+                                console.log(`percentage periodical tax added:${taxAmount}, bal=(${currentBalance}), installment # ${i}`);
                             }
 
                             // or "taxOnPrincipalPayment
@@ -220,7 +222,9 @@ function calculateAnnualCostsPercentageRate(loan, taxes) {
 
 
     let irr = IRR(cashflows, 0.1)     //0.1 is guess value, usually by default is 0.1
-    loan.annualCostsPercentageRate = (1 + irr) ** 12 - 1
+    loan.annualCostsPercentageRate = (1 + irr) ** 12 - 1;
+
+
     return customRound(roundType.NONE, loan.annualCostsPercentageRate)
 }
 
