@@ -79,7 +79,7 @@ let loan5taxes = {
 loan5.annualCostsPercentageRate = calculateAnnualCostsPercentageRate(loan5, loan5taxes);
 console.log(loan5);
 
-// FOR EASIER TESTING AND DELETION OF UNNEEDED CODE
+// FOR EASIER TESTING
 function createLoan(loanParams) {
     let tempLoan = {...loan};
     for (let j = 0; j < Object.keys(tempLoan).length; j++) {
