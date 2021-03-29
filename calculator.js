@@ -1,11 +1,21 @@
 "use strict";
 let eps = 0.000001; //used for comparison of floats, not sure If that much precision is needed
+let count = 0; // remove when deleting the things in gitcalculateInstallment(loan)
 
+const config = {
+    decimalPrecision: 2,
+}
+//config
 const roundType = {
     PRECISION: "precision", //to make sure 10 / 3 * 3 = 10;
-    DECIMALS: "2",
+    DECIMALS: "decimals",
+    NONE: "none",
 }
 
+Object.freeze(roundType);
+
+// ideally we would have a class Loan with Methods to calculate the 4 parameters.
+// I imagine to use it as Loan.CalcParameter("calculationType") for each parameter Type we would call a different calculation method
 const calculationType = {
     PRINCIPAL: "principal",
     TERM: "term",
@@ -15,35 +25,85 @@ const calculationType = {
 
 // Should be refactored to a class with methods
 let loan = {
-    interestRate: 0.045, //calculated with TODO:
-    term: 60, //calculate using calculateLoanTerm();
+    calcType: "", // for printing/debugging, not needed for calculations
     principal: 75000, //calculate by using calculateLoanPrincipal();
+    term: 60, //calculate using calculateLoanTerm();
+    interestRate: 0.045, //calculated with TODO:
     installment: 0, //calculate by using calculateInstallment();
-    annualCostsPercentage: 0,
+    annualCostsPercentageRate: 0
 }
 
-loan.installment = calculateInstallment(loan);
+// UNIT TESTS
+let loan1 = ["installment", 75000, 60, 0.045, 0, 0];
+loan1 = createLoan(loan1);
+loan1.installment = calculateInstallment(loan1);
+console.log(loan1);
 
-// BNP's behaviour
-if (Math.abs(Math.round(loan.term) - loan.term) > eps) {
-    loan.term = Math.round(loan.term);
+let loan2 = ["principal", 75000, 60, 0.045, 1398, 0];
+loan2 = createLoan(loan2);
+loan2.principal = calculateLoanPrincipal(loan2);
+console.log(loan2);
+
+let loan3 = ["term", 75000, 60, 0.045, loan1.installment, 0];
+loan3 = createLoan(loan3);
+loan3.term = calculateLoanTerm(loan3);
+console.log(loan3);
+
+let loan4 = ["interest rate", 75000, 60, 0, loan1.installment, 0];
+loan4 = createLoan(loan4);
+loan4.interestRate = calculateInterestRate(loan4);
+console.log(loan4);
+
+let loan5 = ["interest rate", 75000, 60, 0.045, loan1.installment, 0];
+loan5 = createLoan(loan5);
+let loan5taxes = {
+    initial: 120,
+    periodical: [
+        {
+            type: "fixed",
+            amount: 2,
+            period: 1
+        },
+        {
+            type: "fixed",
+            amount: 300,
+            period: 12
+        },
+        {
+            type: "percentage",
+            amount: 0.02,
+            period: 12
+        }
+    ]
+}
+loan5.annualCostsPercentageRate = calculateAnnualCostsPercentageRate(loan5, loan5taxes);
+console.log(loan5);
+
+// FOR EASIER TESTING AND DELETION OF UNNEEDED CODE
+function createLoan(loanParams) {
+    let tempLoan = {...loan};
+    for (let j = 0; j < Object.keys(tempLoan).length; j++) {
+        tempLoan[Object.keys(tempLoan)[j]] = loanParams[j];
+    }
+    return tempLoan;
 }
 
-// use when rounding needs to be done due to loss of precision inherent with floats
-function customRound(val, type) {
+function customRound(type, val) {
     switch (type) {
         case roundType.DECIMALS:
-            let decimals = parseInt(roundType.DECIMALS)
-            val = Math.round(val * 10 ** decimals) / decimals;
-            console.log(val)
+            let decimals = config["decimalPrecision"];
+            val = Math.round(val * 10 ** decimals) / (10 ** decimals);
+            return val;
             break;
         case roundType.PRECISION:
             if ((Math.abs(Math.round(val) - val) < eps)) {
-                console.log(val)
                 val = Math.round(val);
             }
-
             return val;
+            break;
+        case roundType.NONE:
+            return val;
+            break;
         default:
             break;
     }
@@ -54,21 +114,31 @@ function calculateLoanPrincipal(loan) {
     let monthlyInterestRate = loan.interestRate / 12;
     let monthlyInterestFactor = 1 + monthlyInterestRate;
     let result = loan.installment / monthlyInterestRate * (1 - monthlyInterestFactor ** (-loan.term));
-    return customRound(result, roundType.DECIMALS);
+    loan.calcType = "principal";
+    return customRound(roundType.NONE, result);
 }
 
 function calculateLoanTerm(loan) {
     let monthlyInterestRate = loan.interestRate / 12;
     let monthlyInterestFactor = 1 + monthlyInterestRate;
     let result = (Math.log(loan.installment) - Math.log(loan.installment - loan.principal * monthlyInterestRate)) / Math.log(monthlyInterestFactor);
-    return customRound(result, roundType.PRECISION);
+    loan.calcType = "term";
+    return customRound(roundType.NONE, result);
 }
 
 function calculateInstallment(loan) {
     let monthlyInterestRate = loan.interestRate / 12;
     let monthlyInterestFactor = 1 + monthlyInterestRate;
     let result = (loan.principal * monthlyInterestRate) / (1 - (monthlyInterestFactor) ** (-loan.term))
-    return customRound(result, roundType.DECIMALS);
+    loan.calcType = "installment";
+    //TODO: remove from code after testing
+    //console.log(calculateInstallment.caller); (doesn't work in strict mode since ES5 :(
+    count+=1;
+    if (count > 1){
+        loan.calcType = "ГПР"
+    }
+    //REMOVE UNTIL HERE
+    return customRound(roundType.NONE, result);
 }
 
 function calculateInterestRate(loan) {
@@ -77,61 +147,87 @@ function calculateInterestRate(loan) {
         cashflow.push(loan.installment);
     }
 
-    let monthlyInterestRate = irr(cashflow);
+    let monthlyInterestRate = IRR(cashflow);
     let result = monthlyInterestRate * 12;
-    return customRound(result, roundType.DECIMALS);
+    return customRound(roundType.NONE, result);
 }
+
 
 console.log(`\n===INTEREST RATE CHECK===`);
-let pmt = loan.installment;
-let i = loan.interestRate / 12;
-let q = 1 + i;
-let n = loan.term;
-let p = loan.principal
 
-let balance = p * q ** n - pmt / i * (q ** n - 1)
-console.log(`\n===BALANCE==`);
-console.log(customRound(balance,roundType.DECIMALS));
-
-//all below is for GPR calculation
-function calculateAnnualCostsPercentageRate(loan, taxes){
-    let initialTax = 0;
-    let monthlyTax = 0;
-    let cashflow = [];
-    cashflow.push(-loan.principal + initialTax);
-
-    for (let i = 0; i < loan.term; ++i) {
-        cashflow.push(loan.installment + monthlyTax)
-    }
+function calculateOutstandingAmount(loan, nper) {
+    let pmt = calculateInstallment(loan);
+    let i = loan.interestRate / 12;
+    let q = 1 + i;
+    let n = nper;
+    let p = loan.principal;
+    let balance = p * q ** n - pmt / i * (q ** n - 1);
+    return balance;
 }
 
+let balance = calculateOutstandingAmount(loan, 60);
+/*when your Loan parameters are right, the balance (outstanding amount,
+after you paid the last installment should be damn close to zero.*/
+console.log(`balance is ${balance}`);
+if (balance < eps) {
+    console.log("your loan is OK")
+}
+
+//all below is for GPR calculation
+function calculateAnnualCostsPercentageRate(loan, taxes) {
+
+    let initialTax = taxes["initial"];
+    let cashflows = [];
+
+    cashflows.push(-loan.principal + initialTax);
+    for (let i = 0; i < loan.term; ++i) {
+        let taxAmount = 0;
+        for (const taxType in taxes) {
+            if (taxType == "periodical") {
+                for (const currentTax of taxes[taxType]) {
+                    if (currentTax.type === 'fixed') {
+                        if (currentTax.period === 1) {
+                            taxAmount += currentTax.amount;
+                        }
+
+                        if (currentTax.period > 1 && i > 0 && currentTax.period % i == 0) {
+                            if (i == 1) {
+                                continue;
+                            }
+                            taxAmount += currentTax.amount
+                        }
+                    }
+
+                    if (currentTax.type === 'percentage') {
+                        if (i > 0 && i % currentTax.period == 0) {
+                            let currentBalance = calculateOutstandingAmount(loan, i);
+                            let anotherType = "taxOnOutstandingAmount"
+                            if (anotherType == "taxOnOutstandingAmount") {
+                                taxAmount += currentTax.amount * currentBalance
+                            }
+
+                            // or "taxOnPrincipalPayment
+                            // let interestPart = currentTax * loan.interestRate;
+                            // let principalPart = loan.installment - interestPart;
+                            // taxAmount += currentTax.amount * principalPart
+                        }
+                    }
+                }
+            }
+        }
+        cashflows.push(loan.installment + taxAmount)
+    }
+
+
+    let irr = IRR(cashflows, 0.1)     //0.1 is guess value, usually by default is 0.1
+    loan.annualCostsPercentageRate = (1 + irr) ** 12 - 1
+    return customRound(roundType.NONE, loan.annualCostsPercentageRate)
+}
+
+
+//https://gist.github.com/ghalimi/4591338
 function IRR(values, guess) {
-    // Copyright (c) 2012 Sutoiku, Inc. (MIT License)
-
-// Some algorithms have been ported from Apache OpenOffice:
-
-    /**************************************************************
-     *
-     * Licensed to the Apache Software Foundation (ASF) under one
-     * or more contributor license agreements.  See the NOTICE file
-     * distributed with this work for additional information
-     * regarding copyright ownership.  The ASF licenses this file
-     * to you under the Apache License, Version 2.0 (the
-     * "License"); you may not use this file except in compliance
-     * with the License.  You may obtain a copy of the License at
-     *
-     *   http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing,
-     * software distributed under the License is distributed on an
-     * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-     * KIND, either express or implied.  See the License for the
-     * specific language governing permissions and limitations
-     * under the License.
-     *
-     *************************************************************/
-
-        // Credits: algorithm inspired by Apache OpenOffice
+    // Credits: algorithm inspired by Apache OpenOffice
 
     // Calculates the resulting amount
     var irrResult = function (values, dates, rate) {
