@@ -78,6 +78,48 @@ let loan5taxes = {
     ]
 }
 loan5.annualCostsPercentageRate = calculateAnnualCostsPercentageRate(loan5, loan5taxes);
+
+// AFTER meeting
+
+let userInstallment = 1350;
+
+loan3.installment = userInstallment;
+let calculatedTerm = calculateLoanTerm(loan3)
+console.log(calculatedTerm);
+
+loan3.term = Math.floor(calculatedTerm);
+let installmentCandidate1 = calculateInstallment(loan3);
+console.log(installmentCandidate1 + "----------1");
+loan3.term = Math.ceil(calculatedTerm);
+let installmentCandidate2 = calculateInstallment(loan3);
+console.log(installmentCandidate2 + "----------2");
+
+let diff1 = Math.abs(userInstallment - installmentCandidate1)
+let diff2 = Math.abs(userInstallment - installmentCandidate2)
+
+let finalInstallment = Math.min(diff1, diff2)
+
+//от тука трябва да се хване някак си, че е първата вноска
+console.log(finalInstallment);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 console.log(loan5);
 
 // FOR EASIER TESTING
