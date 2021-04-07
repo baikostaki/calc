@@ -35,7 +35,7 @@ let loan = {
 }
 
 // UNIT TESTS
-let loan1 = ["installment", 75000, 60, 0.045, 0, 0];
+let loan1 = ["installment", 1499, 24, 0.25, 0, 0];
 loan1 = createLoan(loan1);
 loan1.installment = calculateInstallment(loan1);
 console.log(loan1);
@@ -55,27 +55,27 @@ loan4 = createLoan(loan4);
 loan4.interestRate = calculateInterestRate(loan4);
 console.log(loan4);
 
-let loan5 = ["interest rate", 75000, 60, 0.045, loan1.installment, 0];
+let loan5 = ["interest rate", 1499, 24, 0.25, loan1.installment, 0];
 loan5 = createLoan(loan5);
 let loan5taxes = {
-    initial: 120,
-    periodical: [
-        {
-            type: "fixed",
-            amount: 2,
-            period: 1
-        },
-        {
-            type: "fixed",
-            amount: 300,
-            period: 12
-        },
-        {
-            type: "percentage",
-            amount: 0.02,
-            period: 12
-        }
-    ]
+    initial: 0.035*loan5.principal,
+    // periodical: [
+    //     {
+    //         type: "fixed",
+    //         amount: 2,
+    //         period: 1
+    //     },
+    //     {
+    //         type: "fixed",
+    //         amount: 300,
+    //         period: 12
+    //     },
+    //     {
+    //         type: "percentage",
+    //         amount: 0.02,
+    //         period: 12
+    //     }
+    // ]
 }
 loan5.annualCostsPercentageRate = calculateAnnualCostsPercentageRate(loan5, loan5taxes);
 
@@ -98,6 +98,7 @@ let diff1 = Math.abs(userInstallment - installmentCandidate1)
 let diff2 = Math.abs(userInstallment - installmentCandidate2)
 
 let finalInstallment = Math.min(diff1, diff2)
+
 
 //от тука трябва да се хване някак си, че е първата вноска
 console.log(finalInstallment);
@@ -268,7 +269,13 @@ function calculateAnnualCostsPercentageRate(loan, taxes) {
     loan.annualCostsPercentageRate = (1 + irr) ** 12 - 1;
 
     cashflows.shift();
-    let totalAmountToPay = cashflows.reduce((x,y)=>x+y);
+    let totalAmountToPay = cashflows.reduce((x,y)=>{
+
+        let roundX = (Math.round(x * 10 ** 2) / (10 ** 2));
+        let roundY = (Math.round(y * 10 ** 2) / (10 ** 2));
+        return roundX+roundY
+    });
+
     console.log(totalAmountToPay);
     loan.totalAmountPaid = totalAmountToPay;
 
